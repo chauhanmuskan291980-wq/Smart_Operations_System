@@ -3,8 +3,6 @@ import 'dotenv/config';
 
 const { PrismaClient } = pkg;
 
-const prisma = new PrismaClient({
-  accelerateUrl: process.env.DATABASE_URL,
-});
+const prisma = new PrismaClient();
 
 export default prisma;
