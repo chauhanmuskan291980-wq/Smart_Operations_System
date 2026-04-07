@@ -1,16 +1,22 @@
 import { useState } from 'react';
+import { BrowserRouter as Router, Routes, Route, useNavigate } from 'react-router-dom';
 import api from './api/axios';
 import './index.css';
+import TaskDashboard from './TaskDashboard';
 
-function App() {
+// 1. Create a separate component for Login logic to use hooks correctly
+function LoginContent() {
   const [isLogin, setIsLogin] = useState(true);
   const [formData, setFormData] = useState({
     name: '',
     email: '',
     password: '',
-    role: 'USER', // Default role
+    role: 'USER',
   });
   const [message, setMessage] = useState({ type: '', text: '' });
+  
+  // Now useNavigate will work because it's inside the Router context
+  const navigate = useNavigate();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -23,7 +29,9 @@ function App() {
         localStorage.setItem('token', response.data.token);
         localStorage.setItem('user', JSON.stringify(response.data.user));
         setMessage({ type: 'success', text: 'Login Successful! Redirecting...' });
-        // Redirect logic would go here
+        
+        // Use a small delay so the user can see the success message
+        setTimeout(() => navigate('/dashboard'), 1500);
       } else {
         setMessage({ type: 'success', text: 'Registration Successful! Please Login.' });
         setIsLogin(true);
@@ -55,7 +63,7 @@ function App() {
               <label className="block text-sm font-medium text-slate-700">Full Name</label>
               <input
                 type="text"
-                className="mt-1 w-full rounded-lg border border-slate-300 p-2 focus:ring-2 focus:ring-blue-500 outline-none"
+                className="mt-1 w-full rounded-lg border border-slate-300 p-2 focus:ring-2 focus:ring-blue-500 outline-none text-slate-900"
                 placeholder="John Doe"
                 onChange={(e) => setFormData({...formData, name: e.target.value})}
                 required
@@ -67,7 +75,7 @@ function App() {
             <label className="block text-sm font-medium text-slate-700">Email Address</label>
             <input
               type="email"
-              className="mt-1 w-full rounded-lg border border-slate-300 p-2 focus:ring-2 focus:ring-blue-500 outline-none"
+              className="mt-1 w-full rounded-lg border border-slate-300 p-2 focus:ring-2 focus:ring-blue-500 outline-none text-slate-900"
               placeholder="admin@company.com"
               onChange={(e) => setFormData({...formData, email: e.target.value})}
               required
@@ -78,7 +86,7 @@ function App() {
             <label className="block text-sm font-medium text-slate-700">Password</label>
             <input
               type="password"
-              className="mt-1 w-full rounded-lg border border-slate-300 p-2 focus:ring-2 focus:ring-blue-500 outline-none"
+              className="mt-1 w-full rounded-lg border border-slate-300 p-2 focus:ring-2 focus:ring-blue-500 outline-none text-slate-900"
               placeholder="••••••••"
               onChange={(e) => setFormData({...formData, password: e.target.value})}
               required
@@ -89,7 +97,7 @@ function App() {
             <div>
               <label className="block text-sm font-medium text-slate-700">Role</label>
               <select 
-                className="mt-1 w-full rounded-lg border border-slate-300 p-2 focus:ring-2 focus:ring-blue-500 outline-none"
+                className="mt-1 w-full rounded-lg border border-slate-300 p-2 focus:ring-2 focus:ring-blue-500 outline-none text-slate-900"
                 onChange={(e) => setFormData({...formData, role: e.target.value})}
               >
                 <option value="USER">User</option>
@@ -117,6 +125,18 @@ function App() {
         </div>
       </div>
     </div>
+  );
+}
+
+// 2. Main App component handles the routes
+function App() {
+  return (
+    <Router>
+      <Routes>
+        <Route path="/" element={<LoginContent />} />
+        <Route path="/dashboard" element={<TaskDashboard />} />
+      </Routes>
+    </Router>
   );
 }
 
