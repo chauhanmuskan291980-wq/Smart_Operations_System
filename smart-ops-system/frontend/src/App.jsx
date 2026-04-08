@@ -7,12 +7,16 @@ import TaskDashboard from './TaskDashboard';
 // 1. Create a separate component for Login logic to use hooks correctly
 function LoginContent() {
   const [isLogin, setIsLogin] = useState(true);
+  
+  // The role defaults to 'USER' here, so it will automatically be sent 
+  // during registration without the user needing to select it.
   const [formData, setFormData] = useState({
     name: '',
     email: '',
     password: '',
-    role: 'USER',
+    role: 'USER', 
   });
+  
   const [message, setMessage] = useState({ type: '', text: '' });
   
   // Now useNavigate will work because it's inside the Router context
@@ -93,19 +97,7 @@ function LoginContent() {
             />
           </div>
 
-          {!isLogin && (
-            <div>
-              <label className="block text-sm font-medium text-slate-700">Role</label>
-              <select 
-                className="mt-1 w-full rounded-lg border border-slate-300 p-2 focus:ring-2 focus:ring-blue-500 outline-none text-slate-900"
-                onChange={(e) => setFormData({...formData, role: e.target.value})}
-              >
-                <option value="USER">User</option>
-                <option value="MANAGER">Manager</option>
-                <option value="ADMIN">Admin</option>
-              </select>
-            </div>
-          )}
+          {/* Role selection dropdown has been completely removed from here */}
 
           <button
             type="submit"
