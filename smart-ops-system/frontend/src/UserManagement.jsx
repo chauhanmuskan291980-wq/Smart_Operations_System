@@ -4,53 +4,63 @@ import { UserPlus, ShieldCheck, Users, Mail, UserCog, User, Pencil, Trash2, X } 
 
 export default function UserManagement() {
   const [users, setUsers] = useState([]);
-  const [editingUser, setEditingUser] = useState(null); // State for modal
-  const [editForm, setEditForm] = useState({ name: '', email: '', role: '' });
+  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [editingUser, setEditingUser] = useState(null);
+  
+  const [form, setForm] = useState({ name: '', email: '', password: '', role: 'USER' });
   const currentUser = JSON.parse(localStorage.getItem('user'));
   const token = localStorage.getItem('token');
 
   const fetchUsers = async () => {
     try {
-      const res = await api.get('/auth'); // Ensure this matches your route
+      const res = await api.get('/auth'); 
       setUsers(res.data);
     } catch (error) {
       console.error("Fetch failed", error);
     }
   };
 
-  useEffect(() => {
-    fetchUsers();
-  }, []);
+  useEffect(() => { fetchUsers(); }, []);
 
-  // --- Actions ---
+  const handleAddUser = async (e) => {
+    e.preventDefault();
+    try {
+      await api.post('/auth/register', form); // Uses your existing register endpoint
+      setIsAddModalOpen(false);
+      setForm({ name: '', email: '', password: '', role: 'USER' });
+      fetchUsers();
+    } catch (error) {
+      alert(error.response?.data?.error || "Registration failed");
+    }
+  };
+
+  const handleUpdate = async (e) => {
+    e.preventDefault();
+    try {
+      await api.put(`/auth/${editingUser.id}`, form, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      setEditingUser(null);
+      setForm({ name: '', email: '', password: '', role: 'USER' });
+      fetchUsers();
+    } catch (error) {
+      console.error("Update failed", error);
+    }
+  };
+
   const handleDelete = async (id) => {
     if (!window.confirm("Delete this user?")) return;
     try {
-      await api.delete(`/auth/${id}`, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
+      await api.delete(`/auth/${id}`, { headers: { Authorization: `Bearer ${token}` } });
       fetchUsers();
     } catch (error) {
       console.error("Delete failed", error);
     }
   };
 
-  const handleEditClick = (u) => {
+  const openEdit = (u) => {
     setEditingUser(u);
-    setEditForm({ name: u.name, email: u.email, role: u.role });
-  };
-
-  const handleUpdate = async (e) => {
-    e.preventDefault();
-    try {
-      await api.put(`/auth/${editingUser.id}`, editForm, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      setEditingUser(null);
-      fetchUsers();
-    } catch (error) {
-      console.error("Update failed", error);
-    }
+    setForm({ name: u.name, email: u.email, password: '', role: u.role });
   };
 
   const getRoleColor = (role) => {
@@ -70,6 +80,7 @@ export default function UserManagement() {
 
   return (
     <div className="space-y-8 animate-in fade-in duration-500">
+      {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <StatCard icon={<Users/>} label="Total Users" value={stats.total} color="blue" />
         <StatCard icon={<ShieldCheck/>} label="Admins" value={stats.admins} color="rose" />
@@ -77,11 +88,15 @@ export default function UserManagement() {
         <StatCard icon={<User/>} label="Users" value={stats.staff} color="emerald" />
       </div>
 
+      {/* User Table */}
       <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-sm">
         <div className="p-6 border-b border-slate-100 flex justify-between items-center">
           <h3 className="text-xl font-bold text-[#0a2b45]">System Personnel</h3>
           {currentUser.role === 'ADMIN' && (
-            <button className="bg-[#0a2b45] text-white px-4 py-2 rounded-lg text-sm font-bold flex items-center gap-2">
+            <button 
+              onClick={() => { setForm({ name: '', email: '', password: '', role: 'USER' }); setIsAddModalOpen(true); }}
+              className="bg-[#0a2b45] text-white px-4 py-2 rounded-lg text-sm font-bold flex items-center gap-2"
+            >
               <UserPlus size={18} /> Add User
             </button>
           )}
@@ -98,7 +113,7 @@ export default function UserManagement() {
           <tbody className="divide-y divide-slate-100">
             {users.map(u => (
               <tr key={u.id} className="hover:bg-slate-50/50 transition-colors">
-                <td className="px-6 py-4 font-semibold">{u.name}</td>
+                <td className="px-6 py-4 font-semibold text-slate-800">{u.name}</td>
                 <td className="px-6 py-4 text-slate-500">{u.email}</td>
                 <td className="px-6 py-4">
                   <span className={`px-2 py-1 rounded text-xs font-bold ${getRoleColor(u.role)}`}>
@@ -106,12 +121,8 @@ export default function UserManagement() {
                   </span>
                 </td>
                 <td className="px-6 py-4 flex gap-3">
-                  <button onClick={() => handleEditClick(u)} className="text-slate-400 hover:text-blue-600">
-                    <Pencil size={18} />
-                  </button>
-                  <button onClick={() => handleDelete(u.id)} className="text-slate-400 hover:text-red-600">
-                    <Trash2 size={18} />
-                  </button>
+                  <button onClick={() => openEdit(u)} className="text-slate-400 hover:text-blue-600"><Pencil size={18} /></button>
+                  <button onClick={() => handleDelete(u.id)} className="text-slate-400 hover:text-red-600"><Trash2 size={18} /></button>
                 </td>
               </tr>
             ))}
@@ -119,37 +130,45 @@ export default function UserManagement() {
         </table>
       </div>
 
-      {/* Basic Edit Modal */}
-      {editingUser && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <div className="bg-white p-6 rounded-xl w-96">
-            <div className="flex justify-between mb-4">
-              <h3 className="font-bold">Edit User</h3>
-              <button onClick={() => setEditingUser(null)}><X/></button>
-            </div>
-            <form onSubmit={handleUpdate} className="space-y-4">
-              <input 
-                className="w-full border p-2 rounded" 
-                value={editForm.name} 
-                onChange={e => setEditForm({...editForm, name: e.target.value})} 
-                placeholder="Name"
-              />
-              <input 
-                className="w-full border p-2 rounded" 
-                value={editForm.email} 
-                onChange={e => setEditForm({...editForm, email: e.target.value})} 
-                placeholder="Email"
-              />
-              <select 
-                className="w-full border p-2 rounded"
-                value={editForm.role}
-                onChange={e => setEditForm({...editForm, role: e.target.value})}
-              >
-                <option value="USER">USER</option>
-                <option value="MANAGER">MANAGER</option>
-                <option value="ADMIN">ADMIN</option>
-              </select>
-              <button type="submit" className="w-full bg-[#0a2b45] text-white py-2 rounded">Update</button>
+      {/* Modal for Add OR Edit */}
+      {(isAddModalOpen || editingUser) && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-white p-8 rounded-2xl w-full max-w-md shadow-2xl relative">
+            <button onClick={() => { setIsAddModalOpen(false); setEditingUser(null); }} className="absolute top-4 right-4 text-slate-400 hover:text-slate-600">
+              <X size={24}/>
+            </button>
+            
+            <h3 className="text-2xl font-bold text-slate-800 mb-6">{editingUser ? 'Edit User' : 'Register New User'}</h3>
+            
+            <form onSubmit={editingUser ? handleUpdate : handleAddUser} className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-slate-700">Full Name</label>
+                <input required className="w-full border border-slate-300 p-2.5 rounded-lg mt-1" value={form.name} onChange={e => setForm({...form, name: e.target.value})} />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-slate-700">Email Address</label>
+                <input required type="email" className="w-full border border-slate-300 p-2.5 rounded-lg mt-1" value={form.email} onChange={e => setForm({...form, email: e.target.value})} />
+              </div>
+              
+              {!editingUser && (
+                <div>
+                  <label className="block text-sm font-medium text-slate-700">Initial Password</label>
+                  <input required type="password" placeholder="••••••••" className="w-full border border-slate-300 p-2.5 rounded-lg mt-1" value={form.password} onChange={e => setForm({...form, password: e.target.value})} />
+                </div>
+              )}
+
+              <div>
+                <label className="block text-sm font-medium text-slate-700">System Role</label>
+                <select className="w-full border border-slate-300 p-2.5 rounded-lg mt-1 bg-white" value={form.role} onChange={e => setForm({...form, role: e.target.value})}>
+                  <option value="USER">USER</option>
+                  <option value="MANAGER">MANAGER</option>
+                  <option value="ADMIN">ADMIN</option>
+                </select>
+              </div>
+              
+              <button type="submit" className="w-full bg-[#0a2b45] text-white py-3 rounded-lg font-bold shadow-lg hover:bg-[#071d2e] transition-all">
+                {editingUser ? 'Save Changes' : 'Create Account'}
+              </button>
             </form>
           </div>
         </div>
@@ -159,11 +178,15 @@ export default function UserManagement() {
 }
 
 function StatCard({ icon, label, value, color }) {
+  const colorMap = {
+    blue: "bg-blue-50 text-blue-600",
+    rose: "bg-rose-50 text-rose-600",
+    amber: "bg-amber-50 text-amber-600",
+    emerald: "bg-emerald-50 text-emerald-600"
+  };
   return (
     <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
-      <div className={`w-10 h-10 rounded-lg mb-4 flex items-center justify-center bg-${color}-50 text-${color}-600`}>
-        {icon}
-      </div>
+      <div className={`w-10 h-10 rounded-lg mb-4 flex items-center justify-center ${colorMap[color]}`}>{icon}</div>
       <p className="text-slate-500 text-sm font-medium">{label}</p>
       <h4 className="text-2xl font-bold text-slate-900">{value}</h4>
     </div>
