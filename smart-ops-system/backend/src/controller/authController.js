@@ -57,3 +57,56 @@ export const login = async (req, res) => {
     res.status(500).json({ error: "Login failed" });
   }
 };
+
+// Get ALL Users Logic
+export const getUsers = async (req, res) => {
+  try {
+    const users = await prisma.user.findMany({
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        role: true,
+        createdAt: true,
+      },
+    });
+    res.status(200).json(users);
+  } catch (error) {
+    console.error("Error fetching users:", error);
+    res.status(500).json({ error: "Failed to fetch users" });
+  }
+};
+
+// DELETE User
+export const deleteUser = async (req, res) => {
+  const { id } = req.params;
+
+  try {
+    await prisma.user.delete({
+      where: { id: id },
+    });
+    res.status(200).json({ message: "User deleted successfully" });
+  } catch (error) {
+    res.status(500).json({ error: "Failed to delete user" });
+  }
+};
+
+// UPDATE User
+export const updateUser = async (req, res) => {
+  const { id } = req.params;
+  const { name, email, role } = req.body;
+
+  try {
+    const updatedUser = await prisma.user.update({
+      where: { id: id },
+      data: {
+        name,
+        email,
+        role,
+      },
+    });
+    res.status(200).json(updatedUser);
+  } catch (error) {
+    res.status(500).json({ error: "Update failed" });
+  }
+};
