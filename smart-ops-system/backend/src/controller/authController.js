@@ -3,28 +3,38 @@ import jwt from 'jsonwebtoken';
 import prisma from '../config/prisma.js';
 
 // REGISTER Logic
+// REGISTER Logic
 export const register = async (req, res) => {
   const { name, email, password, role } = req.body;
 
   try {
-    // Check if user exists
     const existingUser = await prisma.user.findUnique({ where: { email } });
     if (existingUser) return res.status(400).json({ error: "User already exists" });
 
-    // Hash password
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    // Create User
     const user = await prisma.user.create({
       data: {
         name,
         email,
         password: hashedPassword,
-        role: role || 'USER', // Default to USER if not provided
+        role: role || 'USER',
       },
     });
 
-    res.status(201).json({ message: "User registered successfully!" });
+    // Generate JWT immediately after creation
+    const token = jwt.sign(
+      { userId: user.id, role: user.role },
+      process.env.JWT_SECRET,
+      { expiresIn: '24h' }
+    );
+
+    // Return token and user info so frontend can log them in directly
+    res.status(201).json({
+      message: "User registered successfully!",
+      token,
+      user: { id: user.id, name: user.name, role: user.role }
+    });
   } catch (error) {
     console.error(error);
     res.status(500).json({ error: "Registration failed" });
@@ -46,7 +56,7 @@ export const login = async (req, res) => {
     const token = jwt.sign(
       { userId: user.id, role: user.role },
       process.env.JWT_SECRET,
-      { expiresIn: '8h' }
+      { expiresIn: '24h' }
     );
 
     res.status(200).json({

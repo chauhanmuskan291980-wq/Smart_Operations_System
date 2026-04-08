@@ -22,28 +22,34 @@ function LoginContent() {
   // Now useNavigate will work because it's inside the Router context
   const navigate = useNavigate();
 
-  const handleSubmit = async (e) => {
+const handleSubmit = async (e) => {
     e.preventDefault();
     const endpoint = isLogin ? '/auth/login' : '/auth/register';
     
     try {
       const response = await api.post(endpoint, formData);
       
-      if (isLogin) {
-        localStorage.setItem('token', response.data.token);
-        localStorage.setItem('user', JSON.stringify(response.data.user));
-        setMessage({ type: 'success', text: 'Login Successful! Redirecting...' });
+      // Both login and registration now return token and user data
+      localStorage.setItem('token', response.data.token);
+      localStorage.setItem('user', JSON.stringify(response.data.user));
+      
+      const successText = isLogin 
+        ? 'Login Successful! Redirecting...' 
+        : 'Account Created! Redirecting to Dashboard...';
         
-        // Use a small delay so the user can see the success message
-        setTimeout(() => navigate('/dashboard'), 1500);
-      } else {
-        setMessage({ type: 'success', text: 'Registration Successful! Please Login.' });
-        setIsLogin(true);
-      }
+      setMessage({ type: 'success', text: successText });
+      
+      // Move forward to dashboard immediately regardless of mode
+      setTimeout(() => navigate('/dashboard'), 1500);
+
     } catch (error) {
-      setMessage({ type: 'error', text: error.response?.data?.error || 'Something went wrong' });
+      setMessage({ 
+        type: 'error', 
+        text: error.response?.data?.error || 'Something went wrong' 
+      });
     }
   };
+  
 
   return (
     <div className="flex h-screen items-center justify-center bg-slate-900 p-4">
