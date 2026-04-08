@@ -13,7 +13,9 @@ export default function UserManagement() {
 
   const fetchUsers = async () => {
     try {
-      const res = await api.get('/auth'); 
+      const res = await api.get('/auth',{
+        headers: { Authorization: `Bearer ${token}` },
+      }); 
       setUsers(res.data);
     } catch (error) {
       console.error("Fetch failed", error);
