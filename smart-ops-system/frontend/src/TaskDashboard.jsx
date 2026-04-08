@@ -26,7 +26,8 @@ export default function TaskDashboard() {
 
   const token = localStorage.getItem("token");
   const user = JSON.parse(localStorage.getItem("user"));
-  const isAdmin = user?.role === "ADMIN" || user?.role === "MANAGER";
+  const isAdmin = user?.role === "ADMIN" ;
+  const isManager = user?.role === "MANAGER"
 
   const fetchTasks = async () => {
     try {
@@ -246,7 +247,7 @@ export default function TaskDashboard() {
                   <h3 className="font-bold text-lg text-slate-800 pr-4 leading-tight">
                     {task.title}
                   </h3>
-                  {isAdmin && (
+                  {isAdmin  || isManager && (
                     <div className="flex items-center gap-1">
                       <button
                         onClick={() => handleOpenEdit(task)}

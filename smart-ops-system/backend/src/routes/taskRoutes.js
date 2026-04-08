@@ -11,7 +11,7 @@ router.use(verifyToken);
 router.get('/', getTasks);
 
 // POST: Admin/Manager only
-router.post('/', checkRole(['ADMIN', 'MANAGER']), createTask);
+router.post('/', checkRole(['ADMIN']), createTask);
 
 // PATCH: Everyone can update status
 router.patch('/:id/status', updateTaskStatus);
