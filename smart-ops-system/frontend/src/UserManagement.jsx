@@ -8,7 +8,7 @@ export default function UserManagement() {
   const [editingUser, setEditingUser] = useState(null);
   
   const [form, setForm] = useState({ name: '', email: '', password: '', role: 'USER' });
-  const currentUser = JSON.parse(localStorage.getItem('user'));
+const currentUser = JSON.parse(localStorage.getItem('user')) || { role: 'USER' };
   const token = localStorage.getItem('token');
 
   const fetchUsers = async () => {
@@ -51,14 +51,23 @@ export default function UserManagement() {
   };
 
   const handleDelete = async (id) => {
-    if (!window.confirm("Delete this user?")) return;
-    try {
-      await api.delete(`/auth/${id}`, { headers: { Authorization: `Bearer ${token}` } });
-      fetchUsers();
-    } catch (error) {
-      console.error("Delete failed", error);
-    }
-  };
+  if (!window.confirm("Are you sure you want to delete this user?")) return;
+  
+  try {
+    const res = await api.delete(`/auth/${id}`, { 
+      headers: { Authorization: `Bearer ${token}` } 
+    });
+    
+    // Refresh the list and notify success
+    fetchUsers();
+    alert(res.data.message || "User deleted successfully");
+  } catch (error) {
+    // THIS IS KEY: Show the specific reason from the backend
+    const errorMessage = error.response?.data?.error || "Delete failed";
+    alert(errorMessage); 
+    console.error("Delete failed:", error);
+  }
+};
 
   const openEdit = (u) => {
     setEditingUser(u);

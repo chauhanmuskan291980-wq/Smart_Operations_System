@@ -77,19 +77,29 @@ export const getUsers = async (req, res) => {
   }
 };
 
-// DELETE User
-export const deleteUser = async (req, res) => {
-  const { id } = req.params;
+ export const deleteUser = async (req, res) => {
+  // Use "id" instead of "userId" to match the route above
+  const { id } = req.params; 
 
   try {
-    await prisma.user.delete({
-      where: { id: id },
+    const taskCount = await prisma.task.count({
+      where: { assignedToId: id } // Use "id" here
     });
+
+    if (taskCount > 0) {
+      return res.status(400).json({
+        error: "Cannot delete user. Please reassign their tasks first."
+      });
+    }
+
+    await prisma.user.delete({ where: { id: id } }); // Use "id" here
     res.status(200).json({ message: "User deleted successfully" });
   } catch (error) {
+    console.log(error);
     res.status(500).json({ error: "Failed to delete user" });
   }
 };
+
 
 // UPDATE User
 export const updateUser = async (req, res) => {
